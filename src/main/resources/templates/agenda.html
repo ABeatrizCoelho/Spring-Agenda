@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Minha Agenda</title>
+</head>
+<body>
+
+<h1>Agenda</h1>
+
+<form th:action="@{/agenda-view/salvar}" method="post">
+    <input type="text" name="titulo" placeholder="Título" required>
+    <input type="text" name="descricao" placeholder="Descrição">
+    <input type="date" name="data" required>
+    <input type="time" name="hora">
+    <button type="submit">Salvar</button>
+</form>
+
+<hr>
+
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Título</th>
+        <th>Descrição</th>
+        <th>Data</th>
+        <th>Hora</th>
+        <th>Ações</th>
+    </tr>
+
+    <tr th:each="a : ${agendas}">
+        <td th:text="${a.id}"></td>
+        <td th:text="${a.titulo}"></td>
+        <td th:text="${a.descricao}"></td>
+        <td th:text="${a.data}"></td>
+        <td th:text="${a.hora}"></td>
+        <td>
+            <a th:href="@{/agenda-view/deletar/{id}(id=${a.id})}">
+                Deletar
+            </a>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
