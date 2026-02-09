@@ -26,14 +26,13 @@ public class DiscordListener extends ListenerAdapter {
         if (event.getAuthor().isBot()) return;
 
         String mensagem = event.getMessage().getContentRaw();
-        Long id = event.getMessageIdLong();
 
         if (mensagem.startsWith("!agenda")) {
             processarInsertAgenda(event, mensagem);
         }
 
         if(mensagem.startsWith("!apagarAgenda")){
-            processarDeleteAgenda(event,mensagem, id);
+            processarDeleteAgenda(event,mensagem);
         }
 
         if (mensagem.startsWith("!listarAgenda")) {
@@ -51,35 +50,78 @@ public class DiscordListener extends ListenerAdapter {
 
             List<Agenda> agendas = agendaRepository.findByDataOrderByHora(hoje);
 
-
-            for (Agenda agenda : agendas) {
-
-                Long id =  agenda.getId();
-                LocalDate data = agenda.getData();
-                String titulo = agenda.getTitulo();
-                LocalTime hora = agenda.getHora();
-
-                event.getChannel().sendMessage("Evento de id" + id +
-                    "\n Data = " + data +
-                    "\n Titulo = " + titulo +
-                    "\n hora = " + hora 
-                ).queue();;
+            if (agendas.isEmpty()) {
+                event.getChannel().sendMessage("📭 Nenhum compromisso para hoje.")
+                .queue();
+                return;
             }
 
+            StringBuilder resposta = new StringBuilder();
+
+            resposta.append("📅 **Agenda de hoje (")
+                 .append(hoje)
+                 .append(")**\n\n");
+
+            for (Agenda agenda : agendas) {
+                resposta.append("🆔 ")
+                     .append(agenda.getId())
+                     .append(" | 🕒 ")
+                     .append(agenda.getHora())
+                     .append("\n")
+                     .append("📌 ")
+                     .append(agenda.getTitulo())
+                     .append("\n\n");
+            }
+
+            event.getChannel().sendMessage(resposta.toString()).queue();
+
+            // for (Agenda agenda : agendas) {
+
+            //     Long id =  agenda.getId();
+            //     LocalDate data = agenda.getData();
+            //     String titulo = agenda.getTitulo();
+            //     LocalTime hora = agenda.getHora();
+
+            //     event.getChannel().sendMessage("Evento de id" + id +
+            //         "\n Data = " + data +
+            //         "\n Titulo = " + titulo +
+            //         "\n hora = " + hora 
+            //     ).queue();;
+            // }
+
         } catch (Exception e) {
-            event.getChannel().sendMessage("Erro").queue();;
+            event.getChannel().sendMessage("❌ Erro ao listar agenda! ").queue();;
         }
     }
 
-    private void processarDeleteAgenda(MessageReceivedEvent event, String mensagem, Long id) {
-        try {
-            agendaRepository.deleteById(id);
+private void processarDeleteAgenda(MessageReceivedEvent event, String mensagem) {
+    try {
+        String[] partes = mensagem.split(" ");
 
-            event.getChannel().sendMessage("Comprimisso de id " + id + " deletado com sucesso").queue();;
-        } catch (Exception e) {
-            event.getChannel().sendMessage("Erro").queue();;
-        }
+        Long id = Long.parseLong(partes[1]); 
+
+        agendaRepository.deleteById(id);
+
+        event.getChannel().sendMessage(
+            "🗑️ Compromisso de id " + id + " deletado com sucesso"
+        ).queue();
+
+        if (!agendaRepository.existsById(id)) {
+            event.getChannel().sendMessage(
+            "⚠️ Não existe compromisso com id " + id
+            ).queue();
+            return;
+}
+
+
+    } catch (Exception e) {
+        event.getChannel().sendMessage(
+            "❌ Use: `!apagarAgenda ID`"
+        ).queue();
     }
+}
+
+
 
 
 
