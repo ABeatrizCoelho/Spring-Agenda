@@ -22,6 +22,9 @@ public class Agenda {
     private Long id;
 
     @Column(nullable = false)
+    private Long discordUserId;
+
+    @Column(nullable = false)
     private String titulo;
 
     private String descricao;

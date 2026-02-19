@@ -2,6 +2,7 @@ package com.projetolinux.agenda.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -15,5 +16,10 @@ public interface AgendaRepository extends JpaRepository<Agenda, Long> {
 
     List<Agenda> findByDataOrderByHora(LocalDate data);
 
+    List<Agenda> findByDiscordUserIdAndDataOrderByHora(
+            Long discordUserId,
+            LocalDate data);
+
+    Optional<Agenda> findByIdAndDiscordUserId(Long id, Long discordUserId);
 
 }

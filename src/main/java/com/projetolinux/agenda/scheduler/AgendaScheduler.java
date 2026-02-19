@@ -38,7 +38,7 @@ public class AgendaScheduler {
             "1447922015527764043", // teste de id do canal
             " **Lembrete da Agenda**\n" +
             "Descrição: " + a.getTitulo() + "\n" +
-            "Horário: " + a.getHora()
+            "Horário: " + a.getHora() 
         );
     });
 

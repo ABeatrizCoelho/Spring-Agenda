@@ -25,6 +25,7 @@
         <th>Descrição</th>
         <th>Data</th>
         <th>Hora</th>
+        <th>DiscordId</th>
         <th>Ações</th>
     </tr>
 
@@ -34,6 +35,7 @@
         <td th:text="${a.descricao}"></td>
         <td th:text="${a.data}"></td>
         <td th:text="${a.hora}"></td>
+        <td th:text="${a.discordUserId}"></td>
         <td>
             <a th:href="@{/agenda-view/deletar/{id}(id=${a.id})}">
                 Deletar
