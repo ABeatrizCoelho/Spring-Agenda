@@ -98,9 +98,17 @@ public class DiscordListener extends ListenerAdapter {
 
     private void processarDeleteAgenda(MessageReceivedEvent event, String mensagem) {
         try {
+            Long discordUserId = event.getAuthor().getIdLong();
             String[] partes = mensagem.split(" ");
 
             Long id = Long.parseLong(partes[1]);
+
+            Agenda agenda = agendaRepository.findByIdAndDiscordUserId(discordUserId,id).orElse(null);
+
+            if (agenda == null) {
+                event.getChannel().sendMessage("⚠️ Não existe compromisso com id").queue();
+                return;
+            } 
 
             agendaRepository.deleteById(id);
 

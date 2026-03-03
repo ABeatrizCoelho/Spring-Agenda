@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 
 @Component
@@ -32,10 +33,16 @@ public class DiscordBot {
         .build();
     }
 
-    public void enviarMensagen(String canalId, String mensagem){
-        jda.getTextChannelById(canalId)
-            .sendMessage(mensagem)
-            .queue();
+    public void enviarMensagem(Long userId, String mensagem){
+        User user = jda.getUserById(userId);
+
+
+
+        if (user != null) {
+            user.openPrivateChannel().queue(
+                canal -> canal.sendMessage(mensagem).queue()
+            );
+        }
     }
     
 }
