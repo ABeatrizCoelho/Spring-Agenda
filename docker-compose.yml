@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres-agenda
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres-agenda
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - rede-teste
+
+  app:
+    image: eclipse-temurin:21-jdk
+    container_name: spring-agenda-dev
+
+    working_dir: /app
+
+    volumes:
+      - .:/app
+
+    command: ./mvnw spring-boot:run
+
+    ports:
+      - "8081:8080"
+
+    networks:
+      - rede-teste
+
+    depends_on:
+      - postgres
+
+networks:
+  rede-teste:
+
+volumes:
+  postgres_data:
