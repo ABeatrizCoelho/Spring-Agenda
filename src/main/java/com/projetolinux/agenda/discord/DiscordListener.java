@@ -27,6 +27,7 @@ public class DiscordListener extends ListenerAdapter {
             return;
 
         String mensagem = event.getMessage().getContentRaw();
+        // fazer !help
 
         if (mensagem.startsWith("!agenda")) {
             processarInsertAgenda(event, mensagem);
@@ -59,7 +60,7 @@ public class DiscordListener extends ListenerAdapter {
 
             resposta.append("📅 **Agenda de hoje de ")
                     .append(event.getAuthor().getAsMention())
-                    .append ("(")
+                    .append("(")
                     .append(hoje)
                     .append(")**\n\n");
 
@@ -103,12 +104,12 @@ public class DiscordListener extends ListenerAdapter {
 
             Long id = Long.parseLong(partes[1]);
 
-            Agenda agenda = agendaRepository.findByIdAndDiscordUserId(discordUserId,id).orElse(null);
+            Agenda agenda = agendaRepository.findByIdAndDiscordUserId(discordUserId, id).orElse(null);
 
             if (agenda == null) {
                 event.getChannel().sendMessage("⚠️ Não existe compromisso com id").queue();
                 return;
-            } 
+            }
 
             agendaRepository.deleteById(id);
 
@@ -138,7 +139,6 @@ public class DiscordListener extends ListenerAdapter {
 
             Agenda agenda = new Agenda();
 
-            
             agenda.setDiscordUserId(discordUserId);
             agenda.setData(data);
             agenda.setHora(hora);
@@ -147,7 +147,7 @@ public class DiscordListener extends ListenerAdapter {
             agendaRepository.save(agenda);
 
             event.getChannel().sendMessage(
-                    "✅ Compromisso salvo! " + event.getAuthor().getAsMention() +  "\n📌"  + titulo +
+                    "✅ Compromisso salvo! " + event.getAuthor().getAsMention() + "\n📌" + titulo +
                             "\n🗓️ " + data +
                             "\n🕒 " + hora)
                     .queue();
