@@ -4,10 +4,11 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
+import com.projetolinux.agenda.service.AgendaService;
 import org.springframework.stereotype.Component;
 
 import com.projetolinux.agenda.model.Agenda;
-import com.projetolinux.agenda.repository.AgendaRepository;
+
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -15,10 +16,10 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 @Component
 public class DiscordListener extends ListenerAdapter {
 
-    private final AgendaRepository agendaRepository;
+    private final AgendaService agendaService;
 
-    public DiscordListener(AgendaRepository agendaRepository) {
-        this.agendaRepository = agendaRepository;
+    public DiscordListener(AgendaService agendaService) {
+        this.agendaService = agendaService;
     }
 
     @Override
@@ -27,7 +28,6 @@ public class DiscordListener extends ListenerAdapter {
             return;
 
         String mensagem = event.getMessage().getContentRaw();
-        // fazer !help
 
         if (mensagem.startsWith("!agenda")) {
             processarInsertAgenda(event, mensagem);
@@ -45,10 +45,9 @@ public class DiscordListener extends ListenerAdapter {
 
     private void processarListarAgenda(MessageReceivedEvent event, String mensagem) {
         try {
-            LocalDate hoje = LocalDate.now();
             Long discordId = event.getAuthor().getIdLong();
-
-            List<Agenda> agendas = agendaRepository.findByDiscordUserIdAndDataOrderByHora(discordId, hoje);
+            LocalDate hoje = LocalDate.now();
+            List<Agenda> agendas = agendaService.listarHoje(discordId, hoje);
 
             if (agendas.isEmpty()) {
                 event.getChannel().sendMessage("📭 Nenhum compromisso para hoje.")
@@ -77,20 +76,6 @@ public class DiscordListener extends ListenerAdapter {
 
             event.getChannel().sendMessage(resposta.toString()).queue();
 
-            // for (Agenda agenda : agendas) {
-
-            // Long id = agenda.getId();
-            // LocalDate data = agenda.getData();
-            // String titulo = agenda.getTitulo();
-            // LocalTime hora = agenda.getHora();
-
-            // event.getChannel().sendMessage("Evento de id" + id +
-            // "\n Data = " + data +
-            // "\n Titulo = " + titulo +
-            // "\n hora = " + hora
-            // ).queue();;
-            // }
-
         } catch (Exception e) {
             event.getChannel().sendMessage("❌ Erro ao listar agenda! ").queue();
             ;
@@ -104,23 +89,18 @@ public class DiscordListener extends ListenerAdapter {
 
             Long id = Long.parseLong(partes[1]);
 
-            Agenda agenda = agendaRepository.findByIdAndDiscordUserId(discordUserId, id).orElse(null);
+            boolean apagou = agendaService.apagarAgenda(discordUserId, id);
 
-            if (agenda == null) {
-                event.getChannel().sendMessage("⚠️ Não existe compromisso com id").queue();
+            if (!apagou) {
+                event.getChannel()
+                        .sendMessage("⚠️ Não existe compromisso com id " + id)
+                        .queue();
                 return;
             }
 
-            agendaRepository.deleteById(id);
-
-            event.getChannel().sendMessage(
-                    "🗑️ Compromisso de id " + id + " deletado com sucesso").queue();
-
-            if (!agendaRepository.existsById(id)) {
-                event.getChannel().sendMessage(
-                        "⚠️ Não existe compromisso com id " + id).queue();
-                return;
-            }
+            event.getChannel()
+                    .sendMessage("🗑️ Compromisso de id " + id + " deletado com sucesso")
+                    .queue();
 
         } catch (Exception e) {
             event.getChannel().sendMessage(
@@ -137,14 +117,11 @@ public class DiscordListener extends ListenerAdapter {
 
             Long discordUserId = event.getAuthor().getIdLong();
 
-            Agenda agenda = new Agenda();
-
-            agenda.setDiscordUserId(discordUserId);
-            agenda.setData(data);
-            agenda.setHora(hora);
-            agenda.setTitulo(titulo);
-
-            agendaRepository.save(agenda);
+            agendaService.criarAgenda(
+                    discordUserId,
+                    data,
+                    hora,
+                    titulo);
 
             event.getChannel().sendMessage(
                     "✅ Compromisso salvo! " + event.getAuthor().getAsMention() + "\n📌" + titulo +
