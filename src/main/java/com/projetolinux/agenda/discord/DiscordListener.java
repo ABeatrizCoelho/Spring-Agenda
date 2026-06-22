@@ -2,6 +2,7 @@ package com.projetolinux.agenda.discord;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import com.projetolinux.agenda.service.AgendaService;
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.projetolinux.agenda.model.Agenda;
 
-
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -41,6 +42,26 @@ public class DiscordListener extends ListenerAdapter {
             processarListarAgenda(event, mensagem);
         }
 
+    }
+
+    @Override
+    public void onSlashCommandInteraction(
+            SlashCommandInteractionEvent event) {
+
+        switch (event.getName()) {
+
+            case "agenda":
+                criarAgenda(event);
+                break;
+
+            case "listaragenda":
+                listarAgenda(event);
+                break;
+
+            case "apagaragenda":
+                apagarAgenda(event);
+                break;
+        }
     }
 
     private void processarListarAgenda(MessageReceivedEvent event, String mensagem) {
@@ -137,6 +158,114 @@ public class DiscordListener extends ListenerAdapter {
                     .queue();
         }
 
+    }
+
+    private void listarAgenda(
+            SlashCommandInteractionEvent event) {
+
+        Long discordUserId =
+                event.getUser().getIdLong();
+
+        LocalDate hoje = LocalDate.now(
+                ZoneId.of("America/Sao_Paulo")
+        );
+
+        List<Agenda> agendas =
+                agendaService.listarHoje(discordUserId, hoje);
+
+        if (agendas.isEmpty()) {
+
+            event.reply(
+                            "📭 Nenhum compromisso para hoje.")
+                    .queue();
+
+            return;
+        }
+
+        StringBuilder resposta =
+                new StringBuilder();
+
+        for (Agenda agenda : agendas) {
+
+            resposta.append("🆔 ")
+                    .append(agenda.getId())
+                    .append(" | 🕒 ")
+                    .append(agenda.getHora())
+                    .append("\n📌 ")
+                    .append(agenda.getTitulo())
+                    .append("\n\n");
+        }
+
+        event.reply(resposta.toString())
+                .queue();
+    }
+
+    private void apagarAgenda(
+            SlashCommandInteractionEvent event) {
+
+        Long discordUserId =
+                event.getUser().getIdLong();
+
+        Long id =
+                event.getOption("id").getAsLong();
+
+        boolean apagou =
+                agendaService.apagarAgenda(
+                        discordUserId,
+                        id);
+
+        if (!apagou) {
+
+            event.reply(
+                            "⚠️ Compromisso não encontrado.")
+                    .setEphemeral(true)
+                    .queue();
+
+            return;
+        }
+
+        event.reply(
+                        "🗑️ Compromisso removido.")
+                .queue();
+    }
+
+    private void criarAgenda(
+            SlashCommandInteractionEvent event) {
+
+        try {
+
+            LocalDate data = LocalDate.parse(
+                    event.getOption("data").getAsString());
+
+            LocalTime hora = LocalTime.parse(
+                    event.getOption("hora").getAsString());
+
+            String titulo =
+                    event.getOption("titulo").getAsString();
+
+            Long discordUserId =
+                    event.getUser().getIdLong();
+
+            agendaService.criarAgenda(
+                    discordUserId,
+                    data,
+                    hora,
+                    titulo);
+
+            event.reply(
+                            "✅ Compromisso salvo!\n" +
+                                    "📌 " + titulo +
+                                    "\n🗓️ " + data +
+                                    "\n🕒 " + hora)
+                    .queue();
+
+        } catch (Exception e) {
+
+            event.reply(
+                            "❌ Erro ao criar compromisso.")
+                    .setEphemeral(true)
+                    .queue();
+        }
     }
 
 }

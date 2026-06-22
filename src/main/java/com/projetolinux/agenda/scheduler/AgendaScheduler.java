@@ -2,6 +2,7 @@ package com.projetolinux.agenda.scheduler;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,8 +28,15 @@ public class AgendaScheduler {
 
     @Scheduled(fixedRate = 60000)
     public void verificarAgenda(){
-        LocalDate hoje = LocalDate.now();
-        LocalTime agora = LocalTime.now().withSecond(0).withNano(0);
+        System.out.println("Scheduler executando: " + LocalTime.now());
+        LocalDate hoje = LocalDate.now(
+                ZoneId.of("America/Sao_Paulo")
+        );
+        LocalTime agora = LocalTime.now(
+                ZoneId.of("America/Sao_Paulo")
+        ).withSecond(0).withNano(0);
+
+        System.out.println("Agora: " + agora);
 
         
         List<Agenda> compromissos = agendaRepository.findByData(hoje);
@@ -41,9 +49,10 @@ public class AgendaScheduler {
             .forEach(a -> {
                 discordBot.enviarMensagem(
             a.getDiscordUserId(), // teste de id do canal
-            " **Lembrete da Agenda**\n" +
-            "Descrição: " + a.getTitulo() + "\n" +
-            "Horário: " + a.getHora() 
+                        "⏰ Lembrete\n\n" +
+                                "📌 " + a.getTitulo() + "\n" +
+                                "🕒 " + a.getHora() + "\n" +
+                                "📅 " + a.getData()
         );
     });
 
