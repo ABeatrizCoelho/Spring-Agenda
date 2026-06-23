@@ -40,12 +40,41 @@ public class DiscordBot {
                 .addCommands(
                         Commands.slash("agenda", "Criar Compromisso")
                                 .addOption(
-                                        OptionType.STRING,"hora","HH:mm",true
-                                ).addOption(OptionType.STRING,"titulo","Título do compromisso",true),
-                        Commands.slash("listaragenda", "Lista de compromissos de hoje"),
-                        Commands.slash("apagaragenda", "Apaga um compromisso")
-                                .addOption(OptionType.INTEGER, "id", "ID do compromisso", true)
-                ).queue();
+                                        OptionType.STRING,
+                                        "data",
+                                        "AAAA-MM-DD",
+                                        true
+                                )
+                                .addOption(
+                                        OptionType.STRING,
+                                        "hora",
+                                        "HH:mm",
+                                        true
+                                )
+                                .addOption(
+                                        OptionType.STRING,
+                                        "titulo",
+                                        "Título do compromisso",
+                                        true
+                                ),
+
+                        Commands.slash(
+                                "listaragenda",
+                                "Lista de compromissos de hoje"
+                        ),
+
+                        Commands.slash(
+                                        "apagaragenda",
+                                        "Apaga um compromisso"
+                                )
+                                .addOption(
+                                        OptionType.INTEGER,
+                                        "id",
+                                        "ID do compromisso",
+                                        true
+                                )
+                )
+                .queue();
     }
 
     public void enviarMensagem(Long userId, String mensagem) {
