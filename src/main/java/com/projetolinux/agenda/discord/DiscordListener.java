@@ -5,10 +5,15 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 
-import com.projetolinux.agenda.service.AgendaService;
+
+import com.projetolinux.agenda.model.MetaEstudo;
+import com.projetolinux.agenda.model.RegistroEstudo;
+import com.projetolinux.agenda.service.MetaEstudoService;
+import com.projetolinux.agenda.service.RegistroEstudoService;
 import org.springframework.stereotype.Component;
 
 import com.projetolinux.agenda.model.Agenda;
+import com.projetolinux.agenda.service.AgendaService;
 
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -18,9 +23,13 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 public class DiscordListener extends ListenerAdapter {
 
     private final AgendaService agendaService;
+    private final MetaEstudoService metaEstudoService;
+    private final RegistroEstudoService  registroEstudoService;
 
-    public DiscordListener(AgendaService agendaService) {
+    public DiscordListener(AgendaService agendaService, MetaEstudoService metaEstudoService, RegistroEstudoService registroEstudoService) {
         this.agendaService = agendaService;
+        this.metaEstudoService = metaEstudoService;
+        this.registroEstudoService = registroEstudoService;
     }
 
     @Override
@@ -45,8 +54,7 @@ public class DiscordListener extends ListenerAdapter {
     }
 
     @Override
-    public void onSlashCommandInteraction(
-            SlashCommandInteractionEvent event) {
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
 
         switch (event.getName()) {
 
@@ -61,6 +69,252 @@ public class DiscordListener extends ListenerAdapter {
             case "apagaragenda":
                 apagarAgenda(event);
                 break;
+
+            case "estudar":
+                criarMeta(event);
+                break;
+
+            case "estudei":
+                registrarEstudo(event);
+                break;
+
+            case "progresso":
+                mostrarProgresso(event);
+                break;
+
+            case "historico":
+                mostrarHistorico(event);
+                break;
+
+            case "metas":
+                listarMetas(event);
+                break;
+
+            case "apagarmeta":
+                apagarMeta(event);
+                break;
+
+            case "help":
+                mostrarAjuda(event);
+                break;
+        }
+    }
+
+    private void mostrarAjuda(SlashCommandInteractionEvent event) {
+
+        StringBuilder mensagem = new StringBuilder();
+        mensagem.append("Ajuda: \n");
+        mensagem.append("Agenda: \n");
+        mensagem.append("/agenda\n");
+        mensagem.append("/listaragenda\n");
+        mensagem.append("/apagaragenda\n");
+        mensagem.append("Estudos: \n");
+        mensagem.append("/estudar\n");
+        mensagem.append("/historico\n");
+        mensagem.append("/metas\n");
+        mensagem.append("/apagarmeta\n");
+        mensagem.append("/progresso\n");
+
+        event.getChannel().sendMessage(mensagem.toString()).queue();
+
+    }
+
+    private void apagarMeta(SlashCommandInteractionEvent event) {
+
+        Long discordUserId = event.getUser().getIdLong();
+
+        String materia =
+                event.getOption("materia").getAsString();
+
+        boolean apagou =
+                metaEstudoService.apagarMeta(
+                        discordUserId,
+                        materia);
+
+        if (!apagou) {
+
+            event.reply("❌ Meta não encontrada.")
+                    .setEphemeral(true)
+                    .queue();
+
+            return;
+        }
+
+        event.reply("🗑️ Meta de **" + materia + "** removida.")
+                .queue();
+    }
+
+    private void listarMetas(SlashCommandInteractionEvent event) {
+
+        Long discordUserId =
+                event.getUser().getIdLong();
+
+        List<MetaEstudo> metas = metaEstudoService.listarMetas(discordUserId);
+
+        if (metas.isEmpty()) {
+            event.reply("📭 Nenhuma meta ativa encontrada.")
+                    .queue();
+            return;
+        }
+
+        StringBuilder resposta = new StringBuilder();
+
+        for (MetaEstudo metaEstudo : metas) {
+            resposta.append("Matéria: ")
+                    .append(metaEstudo.getMateria())
+                    .append("\n")
+                    .append("Minutos por dia: ")
+                    .append(metaEstudo.getMinutosPorDia());
+        }
+        event.reply(resposta.toString())
+                .queue();
+    }
+
+
+    private void listarAgenda(
+            SlashCommandInteractionEvent event) {
+
+        Long discordUserId =
+                event.getUser().getIdLong();
+
+        LocalDate hoje = LocalDate.now(
+                ZoneId.of("America/Sao_Paulo")
+        );
+
+        List<Agenda> agendas =
+                agendaService.listarHoje(discordUserId, hoje);
+
+        if (agendas.isEmpty()) {
+
+            event.reply(
+                            "📭 Nenhum compromisso para hoje.")
+                    .queue();
+
+            return;
+        }
+
+        StringBuilder resposta =
+                new StringBuilder();
+
+        for (Agenda agenda : agendas) {
+
+            resposta.append("🆔 ")
+                    .append(agenda.getId())
+                    .append(" | 🕒 ")
+                    .append(agenda.getHora())
+                    .append("\n📌 ")
+                    .append(agenda.getTitulo())
+                    .append("\n\n");
+        }
+
+        event.reply(resposta.toString())
+                .queue();
+    }
+
+    private void mostrarHistorico(SlashCommandInteractionEvent event) {
+
+        Long discordUserId = event.getUser().getIdLong();
+
+        List<RegistroEstudo> registros =
+                registroEstudoService.gerarHistorico(discordUserId);
+
+        if (registros.isEmpty()) {
+            event.reply("📚 Nenhum estudo registrado.")
+                    .setEphemeral(true)
+                    .queue();
+            return;
+        }
+
+        StringBuilder resposta = new StringBuilder();
+
+        resposta.append("📖 **Histórico de Estudos**\n\n");
+
+        for (RegistroEstudo r : registros) {
+
+            resposta.append("📅 ")
+                    .append(r.getData())
+                    .append(" | 📚 ")
+                    .append(r.getMateria())
+                    .append(" | ⏱️ ")
+                    .append(r.getMinutos())
+                    .append(" min\n");
+        }
+
+        event.reply(resposta.toString()).queue();
+    }
+
+    private void mostrarProgresso(SlashCommandInteractionEvent event) {
+
+        Long discordUserId = event.getUser().getIdLong();
+
+        StringBuilder resposta = new StringBuilder();
+
+        List<RegistroEstudo> registroEstudos = registroEstudoService.gerarResumoHoje(discordUserId)
+
+        String mensagem =
+                registroEstudoService.gerarResumoHoje(discordUserId);
+
+        event.reply(mensagem).queue();
+    }
+
+    private void registrarEstudo(SlashCommandInteractionEvent event) {
+
+        try {
+
+            Long discordUserId = event.getUser().getIdLong();
+
+            String materia = event.getOption("materia").getAsString();
+
+            Integer minutos = event.getOption("minutos").getAsInt();
+
+            registroEstudoService.registrarEstudo(
+                    discordUserId,
+                    materia,
+                    minutos);
+
+            event.reply("""
+                ✅ Estudo registrado!
+
+                📚 %s
+                ⏱️ %d minutos
+                """.formatted(materia, minutos))
+                    .queue();
+
+        } catch (Exception e) {
+
+            event.reply("❌ Erro ao registrar estudo.")
+                    .setEphemeral(true)
+                    .queue();
+        }
+    }
+
+    private void criarMeta(SlashCommandInteractionEvent event) {
+
+        try {
+
+            Long discordUserId = event.getUser().getIdLong();
+
+            String materia = event.getOption("materia").getAsString();
+
+            Integer minutos = event.getOption("minutos").getAsInt();
+
+            metaEstudoService.criarMeta(
+                    discordUserId,
+                    materia,
+                    minutos);
+
+            event.reply("""
+                ✅ Meta criada!
+
+                📚 Matéria: %s
+                🎯 Meta: %d minutos por dia
+                """.formatted(materia, minutos))
+                    .queue();
+
+        } catch (Exception e) {
+            event.reply("❌ Erro ao criar meta.")
+                    .setEphemeral(true)
+                    .queue();
         }
     }
 
@@ -160,45 +414,6 @@ public class DiscordListener extends ListenerAdapter {
 
     }
 
-    private void listarAgenda(
-            SlashCommandInteractionEvent event) {
-
-        Long discordUserId =
-                event.getUser().getIdLong();
-
-        LocalDate hoje = LocalDate.now(
-                ZoneId.of("America/Sao_Paulo")
-        );
-
-        List<Agenda> agendas =
-                agendaService.listarHoje(discordUserId, hoje);
-
-        if (agendas.isEmpty()) {
-
-            event.reply(
-                            "📭 Nenhum compromisso para hoje.")
-                    .queue();
-
-            return;
-        }
-
-        StringBuilder resposta =
-                new StringBuilder();
-
-        for (Agenda agenda : agendas) {
-
-            resposta.append("🆔 ")
-                    .append(agenda.getId())
-                    .append(" | 🕒 ")
-                    .append(agenda.getHora())
-                    .append("\n📌 ")
-                    .append(agenda.getTitulo())
-                    .append("\n\n");
-        }
-
-        event.reply(resposta.toString())
-                .queue();
-    }
 
     private void apagarAgenda(
             SlashCommandInteractionEvent event) {
@@ -262,7 +477,7 @@ public class DiscordListener extends ListenerAdapter {
         } catch (Exception e) {
 
             event.reply(
-                            "❌ Erro ao criar compromisso.")
+                            "Erro ao criar compromisso.")
                     .setEphemeral(true)
                     .queue();
         }

@@ -38,41 +38,37 @@ public class DiscordBot {
 
         jda.updateCommands()
                 .addCommands(
-                        Commands.slash("agenda", "Criar Compromisso")
-                                .addOption(
-                                        OptionType.STRING,
-                                        "data",
-                                        "AAAA-MM-DD",
-                                        true
-                                )
-                                .addOption(
-                                        OptionType.STRING,
-                                        "hora",
-                                        "HH:mm",
-                                        true
-                                )
-                                .addOption(
-                                        OptionType.STRING,
-                                        "titulo",
-                                        "Título do compromisso",
-                                        true
-                                ),
 
-                        Commands.slash(
-                                "listaragenda",
-                                "Lista de compromissos de hoje"
-                        ),
+                        // Agenda
+                        Commands.slash("agenda", "Criar um compromisso")
+                                .addOption(OptionType.STRING, "data", "AAAA-MM-DD", true)
+                                .addOption(OptionType.STRING, "hora", "HH:mm", true)
+                                .addOption(OptionType.STRING, "titulo", "Título do compromisso", true),
 
-                        Commands.slash(
-                                        "apagaragenda",
-                                        "Apaga um compromisso"
-                                )
-                                .addOption(
-                                        OptionType.INTEGER,
-                                        "id",
-                                        "ID do compromisso",
-                                        true
-                                )
+                        Commands.slash("listaragenda", "Lista os compromissos de hoje"),
+
+                        Commands.slash("apagaragenda", "Apaga um compromisso")
+                                .addOption(OptionType.INTEGER, "id", "ID do compromisso", true),
+
+                        // estudos
+                        Commands.slash("estudar", "Criar uma meta de estudos")
+                                .addOption(OptionType.STRING, "materia", "Ex: Java", true)
+                                .addOption(OptionType.INTEGER, "minutos", "Minutos por dia", true),
+
+                        Commands.slash("estudei", "Registrar estudo realizado")
+                                .addOption(OptionType.STRING, "materia", "Ex: Java", true)
+                                .addOption(OptionType.INTEGER, "minutos", "Minutos estudados", true),
+
+                        Commands.slash("progresso", "Mostra seu progresso de estudos"),
+
+                        Commands.slash("historico", "Mostra seu histórico de estudos"),
+
+                        Commands.slash("metas", "Lista todas as metas"),
+
+                        Commands.slash("apagarmeta", "Apaga uma meta")
+                                .addOption(OptionType.STRING, "materia", "Nome da matéria", true),
+
+                        Commands.slash("help", "Lista todos os comandos")
                 )
                 .queue();
     }
