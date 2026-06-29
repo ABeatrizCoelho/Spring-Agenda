@@ -59,7 +59,7 @@ public class DiscordBot {
                                 .addOption(OptionType.STRING, "materia", "Ex: Java", true)
                                 .addOption(OptionType.INTEGER, "minutos", "Minutos estudados", true),
 
-                        Commands.slash("progresso", "Mostra seu progresso de estudos"),
+                        Commands.slash("resumohoje", "Mostra seu progresso de estudos"),
 
                         Commands.slash("historico", "Mostra seu histórico de estudos"),
 

@@ -8,6 +8,8 @@ import java.util.List;
 
 import com.projetolinux.agenda.model.MetaEstudo;
 import com.projetolinux.agenda.model.RegistroEstudo;
+import com.projetolinux.agenda.repository.MetaEstudoRepository;
+import com.projetolinux.agenda.repository.RegistroEstudoRepository;
 import com.projetolinux.agenda.service.MetaEstudoService;
 import com.projetolinux.agenda.service.RegistroEstudoService;
 import org.springframework.stereotype.Component;
@@ -25,11 +27,15 @@ public class DiscordListener extends ListenerAdapter {
     private final AgendaService agendaService;
     private final MetaEstudoService metaEstudoService;
     private final RegistroEstudoService  registroEstudoService;
+    private final MetaEstudoRepository metaEstudoRepository;
+    private final RegistroEstudoRepository registroEstudoRepository;
 
-    public DiscordListener(AgendaService agendaService, MetaEstudoService metaEstudoService, RegistroEstudoService registroEstudoService) {
+    public DiscordListener(AgendaService agendaService, MetaEstudoService metaEstudoService, RegistroEstudoService registroEstudoService, MetaEstudoRepository metaEstudoRepository, RegistroEstudoRepository registroEstudoRepository) {
         this.agendaService = agendaService;
         this.metaEstudoService = metaEstudoService;
         this.registroEstudoService = registroEstudoService;
+        this.metaEstudoRepository = metaEstudoRepository;
+        this.registroEstudoRepository = registroEstudoRepository;
     }
 
     @Override
@@ -71,15 +77,15 @@ public class DiscordListener extends ListenerAdapter {
                 break;
 
             case "estudar":
-                criarMeta(event);
+                registrarMeta(event);
                 break;
 
             case "estudei":
                 registrarEstudo(event);
                 break;
 
-            case "progresso":
-                mostrarProgresso(event);
+            case "resudohoje":
+                resumoHoje(event);
                 break;
 
             case "historico":
@@ -110,10 +116,11 @@ public class DiscordListener extends ListenerAdapter {
         mensagem.append("/apagaragenda\n");
         mensagem.append("Estudos: \n");
         mensagem.append("/estudar\n");
+        mensagem.append("/estudei\n");
         mensagem.append("/historico\n");
         mensagem.append("/metas\n");
         mensagem.append("/apagarmeta\n");
-        mensagem.append("/progresso\n");
+        mensagem.append("/resumohoje\n");
 
         event.getChannel().sendMessage(mensagem.toString()).queue();
 
@@ -243,18 +250,65 @@ public class DiscordListener extends ListenerAdapter {
         event.reply(resposta.toString()).queue();
     }
 
-    private void mostrarProgresso(SlashCommandInteractionEvent event) {
+    public void resumoHoje(SlashCommandInteractionEvent event) {
 
         Long discordUserId = event.getUser().getIdLong();
 
-        StringBuilder resposta = new StringBuilder();
+        List<MetaEstudo> metas =
+                metaEstudoRepository.findByDiscordUserId(discordUserId);
 
-        List<RegistroEstudo> registroEstudos = registroEstudoService.gerarResumoHoje(discordUserId)
+        if (metas.isEmpty()) {
+            event.reply( "📚 Você ainda não possui metas cadastradas.")
+            .setEphemeral(true)
+            .queue();
+        }
 
-        String mensagem =
-                registroEstudoService.gerarResumoHoje(discordUserId);
+        StringBuilder mensagem = new StringBuilder();
 
-        event.reply(mensagem).queue();
+        mensagem.append("📊 **Resumo de Hoje**\n\n");
+
+        int totalEstudado = 0;
+        int totalMeta = 0;
+
+        LocalDate hoje = LocalDate.now(
+                ZoneId.of("America/Sao_Paulo")
+        );
+
+        for (MetaEstudo meta : metas) {
+
+            Integer estudado = registroEstudoRepository.totalEstudadoHoje(
+                    discordUserId,
+                    meta.getMateria(),
+                    hoje);
+
+            totalEstudado += estudado;
+            totalMeta += meta.getMinutosPorDia();
+
+            mensagem.append("📚 ")
+                    .append(meta.getMateria())
+                    .append("\n")
+                    .append("⏱️ ")
+                    .append(estudado)
+                    .append("/")
+                    .append(meta.getMinutosPorDia())
+                    .append(" min\n\n");
+        }
+
+        mensagem.append("━━━━━━━━━━━━━━\n");
+        mensagem.append("✅ Total estudado: ")
+                .append(totalEstudado)
+                .append(" min\n");
+
+        mensagem.append("🎯 Meta total: ")
+                .append(totalMeta)
+                .append(" min\n");
+
+        mensagem.append("⏳ Restam: ")
+                .append(Math.max(0, totalMeta - totalEstudado))
+                .append(" min");
+
+        event.reply(mensagem.toString())
+                .queue();
     }
 
     private void registrarEstudo(SlashCommandInteractionEvent event) {
@@ -288,7 +342,7 @@ public class DiscordListener extends ListenerAdapter {
         }
     }
 
-    private void criarMeta(SlashCommandInteractionEvent event) {
+    private void registrarMeta(SlashCommandInteractionEvent event) {
 
         try {
 
