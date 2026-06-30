@@ -68,7 +68,7 @@ public class DiscordBot {
                         Commands.slash("apagarmeta", "Apaga uma meta")
                                 .addOption(OptionType.STRING, "materia", "Nome da matéria", true),
 
-                        Commands.slash("help", "Lista todos os comandos")
+                        Commands.slash("ajuda", "Lista todos os comandos")
                 )
                 .queue();
     }
